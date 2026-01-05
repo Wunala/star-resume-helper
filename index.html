@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAR复盘卡片生成器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STAR 复盘卡片生成器</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -12,18 +11,14 @@
             --card-bg: #ffffff;
             --primary: #2c3e50;
             --accent: #3498db;
-            --s-color: #e3f2fd;
-            --s-border: #2196f3;
-            --t-color: #fff3e0;
-            --t-border: #ff9800;
-            --a-color: #e8f5e9;
-            --a-border: #4caf50;
-            --r-color: #fce4ec;
-            --r-border: #e91e63;
+            --s-color: #e3f2fd; --s-border: #2196f3;
+            --t-color: #fff3e0; --t-border: #ff9800;
+            --a-color: #e8f5e9; --a-border: #4caf50;
+            --r-color: #fce4ec; --r-border: #e91e63;
         }
 
         body {
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
             padding: 20px;
@@ -31,249 +26,272 @@
             gap: 20px;
             height: 100vh;
             box-sizing: border-box;
+            overflow: hidden; /* PC端默认不滚动，内容区自己滚 */
         }
 
         /* 左侧输入区 */
         .input-panel {
             flex: 1;
             background: var(--card-bg);
-            padding: 20px;
+            padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             gap: 15px;
             overflow-y: auto;
+            min-width: 300px;
         }
 
-        h2 {
-            margin: 0 0 10px 0;
-            color: var(--primary);
-            font-size: 1.2rem;
-        }
+        h2 { margin: 0 0 5px 0; color: var(--primary); font-size: 1.3rem; }
+        .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 10px; }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        label {
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: #555;
-        }
-
-        input,
-        textarea {
-            padding: 10px;
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-weight: 600; font-size: 0.9rem; color: #444; }
+        
+        input, textarea {
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 6px;
+            border-radius: 8px;
+            font-size: 14px;
             font-family: inherit;
             resize: vertical;
+            transition: border-color 0.2s;
         }
+        input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+        textarea { min-height: 70px; }
 
-        textarea {
-            min-height: 80px;
-        }
-
+        /* 按钮样式优化 */
         button {
-            padding: 12px;
+            padding: 14px;
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background 0.2s;
-            margin-top: auto;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 10px;
+            box-shadow: 0 4px 6px rgba(44, 62, 80, 0.2);
         }
+        button:active { transform: scale(0.98); }
 
-        button:hover {
-            background-color: #34495e;
-        }
-
-        /* 右侧预览区 */
+        /* 右侧预览区容器 */
         .preview-panel {
             flex: 1.5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             background: #e0e5ec;
             border-radius: 12px;
             padding: 20px;
-            overflow: auto;
+            overflow: auto; /* 允许内容过大时滚动 */
+            display: flex;
+            align-items: center; /* PC端垂直居中 */
+            justify-content: center;
         }
 
-        /* 卡片核心样式 */
+        /* 卡片核心样式 (固定宽度以保证生成质量) */
         #star-card {
-            width: 800px;
+            width: 800px; /* 保持固定宽度，确保生成的图片是标准比例 */
+            min-width: 800px; /* 防止被挤压 */
             background: white;
             padding: 40px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             gap: 20px;
+            border-radius: 4px; /* 图片本身不需要大圆角 */
         }
 
-        .header {
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #333;
-        }
-
-        .header p {
-            margin: 5px 0 0;
-            color: #888;
-        }
+        .header { border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 5px; }
+        .header h1 { margin: 0; font-size: 2rem; color: #2c3e50; }
+        .header p { margin: 8px 0 0; color: #95a5a6; font-size: 0.9rem; letter-spacing: 1px; }
 
         .grid-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
-            gap: 20px;
+            gap: 25px;
         }
 
         .grid-item {
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 5px solid #ccc;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 6px solid #ccc;
             background: #fafafa;
         }
 
-        .grid-item h3 {
-            margin-top: 0;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .grid-item h3 { margin: 0 0 10px 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .grid-item .content { font-size: 1rem; line-height: 1.6; color: #34495e; white-space: pre-wrap; word-wrap: break-word;}
 
-        .grid-item .content {
-            font-size: 1rem;
-            line-height: 1.6;
-            color: #444;
-            white-space: pre-wrap;
-        }
+        /* STAR 颜色系统 */
+        .s-box { background: var(--s-color); border-color: var(--s-border); }
+        .s-box h3 { color: #1565c0; }
+        .t-box { background: var(--t-color); border-color: var(--t-border); }
+        .t-box h3 { color: #ef6c00; }
+        .a-box { background: var(--a-color); border-color: var(--a-border); }
+        .a-box h3 { color: #2e7d32; }
+        .r-box { background: var(--r-color); border-color: var(--r-border); }
+        .r-box h3 { color: #c2185b; }
 
-        /* STAR 特定颜色 */
-        .s-box {
-            background: var(--s-color);
-            border-color: var(--s-border);
-        }
+        /* ========= 移动端适配核心代码 ========= */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column; /* 上下排列 */
+                height: auto;
+                padding: 10px;
+                overflow-y: auto; /* 允许整个页面滚动 */
+            }
 
-        .s-box h3 {
-            color: #1565c0;
-        }
+            .input-panel {
+                flex: none; /* 取消弹性伸缩 */
+                width: auto;
+                box-shadow: none;
+                padding: 15px;
+            }
 
-        .t-box {
-            background: var(--t-color);
-            border-color: var(--t-border);
-        }
+            .preview-panel {
+                flex: none;
+                width: auto;
+                padding: 15px;
+                background: transparent; /* 移动端去掉灰色背景让视野更开阔 */
+                justify-content: flex-start; /* 靠左对齐，方便滑动 */
+                margin-top: 20px;
+                border-top: 1px solid #ddd;
+            }
 
-        .t-box h3 {
-            color: #ef6c00;
-        }
+            /* 移动端提示用户可以滑动的遮罩 */
+            .preview-panel::before {
+                content: "← 左右滑动预览图片 →";
+                display: block;
+                position: absolute;
+                margin-top: -30px;
+                font-size: 0.8rem;
+                color: #888;
+                width: 100%;
+                text-align: center;
+                left: 0;
+            }
 
-        .a-box {
-            background: var(--a-color);
-            border-color: var(--a-border);
-        }
-
-        .a-box h3 {
-            color: #2e7d32;
-        }
-
-        .r-box {
-            background: var(--r-color);
-            border-color: var(--r-border);
-        }
-
-        .r-box h3 {
-            color: #c2185b;
+            /* 在手机上，卡片保持800px宽，让用户滑动查看，
+               这样下载下来的图片依然是高清且排版完美的 */
+            #star-card {
+                transform: scale(1); 
+                transform-origin: top left;
+            }
         }
     </style>
 </head>
-
 <body>
 
     <div class="input-panel">
-        <h2>✏️ 编辑内容</h2>
+        <div>
+            <h2>✏️ STAR 复盘助手</h2>
+            <div class="subtitle">填写内容，自动生成四宫格复盘卡片</div>
+        </div>
+        
         <div class="form-group">
-            <label>项目名称 / 经历标题</label>
-            <input type="text" id="input-title" placeholder="例如：搭建Python自动化报表系统" oninput="updateCard()">
+            <label>项目名称</label>
+            <input type="text" id="input-title" placeholder="例如：搭建自动化报表系统" oninput="updateCard()">
         </div>
         <div class="form-group">
             <label>Situation (情境)</label>
-            <textarea id="input-s" placeholder="背景是什么？困难是什么？" oninput="updateCard()"></textarea>
+            <textarea id="input-s" placeholder="当时的背景、痛点、困难是什么？" oninput="updateCard()"></textarea>
         </div>
         <div class="form-group">
             <label>Task (任务)</label>
-            <textarea id="input-t" placeholder="你的目标是什么？" oninput="updateCard()"></textarea>
+            <textarea id="input-t" placeholder="你的目标和KPI是什么？" oninput="updateCard()"></textarea>
         </div>
         <div class="form-group">
-            <label>Action (行动 - 重点！)</label>
-            <textarea id="input-a" placeholder="你具体做了什么？用了什么工具？" oninput="updateCard()"></textarea>
+            <label>Action (行动)</label>
+            <textarea id="input-a" placeholder="你具体做了什么？使用了什么工具/策略？(重点)" oninput="updateCard()"></textarea>
         </div>
         <div class="form-group">
             <label>Result (结果)</label>
-            <textarea id="input-r" placeholder="量化数据？带来的价值？" oninput="updateCard()"></textarea>
+            <textarea id="input-r" placeholder="最终成果？数据提升了多少？" oninput="updateCard()"></textarea>
         </div>
-        <button onclick="downloadImage()">📸 下载图片</button>
+        <button onclick="downloadImage()">📸 生成并下载图片</button>
+        
+        <div style="text-align: center; margin-top: 20px; color: #aaa; font-size: 0.8rem;">
+            🔒 数据纯本地处理，不上传服务器<br>
+            Hosted on GitHub Pages
+        </div>
     </div>
 
     <div class="preview-panel">
         <div id="star-card">
             <div class="header">
                 <h1 id="card-title">项目名称</h1>
-                <p>STAR模型复盘卡片</p>
+                <p>STAR 模型经验复盘</p>
             </div>
             <div class="grid-container">
                 <div class="grid-item s-box">
                     <h3>Situation 情境</h3>
-                    <div class="content" id="card-s">...</div>
+                    <div class="content" id="card-s">在此处填写背景...</div>
                 </div>
                 <div class="grid-item t-box">
                     <h3>Task 任务</h3>
-                    <div class="content" id="card-t">...</div>
+                    <div class="content" id="card-t">在此处填写目标...</div>
                 </div>
                 <div class="grid-item a-box">
                     <h3>Action 行动</h3>
-                    <div class="content" id="card-a">...</div>
+                    <div class="content" id="card-a">在此处填写行动...</div>
                 </div>
                 <div class="grid-item r-box">
                     <h3>Result 结果</h3>
-                    <div class="content" id="card-r">...</div>
+                    <div class="content" id="card-r">在此处填写结果...</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // 初始化运行一次，防止空白
+        window.onload = updateCard;
+
         function updateCard() {
-            document.getElementById('card-title').innerText = document.getElementById('input-title').value || '项目名称';
-            document.getElementById('card-s').innerText = document.getElementById('input-s').value || '在此处填写背景...';
-            document.getElementById('card-t').innerText = document.getElementById('input-t').value || '在此处填写目标...';
-            document.getElementById('card-a').innerText = document.getElementById('input-a').value || '在此处填写行动...';
-            document.getElementById('card-r').innerText = document.getElementById('input-r').value || '在此处填写结果...';
+            // 获取输入值，如果没有输入则显示占位符
+            const safeText = (id, placeholder) => {
+                const val = document.getElementById(id).value;
+                return val ? val : placeholder;
+            };
+
+            document.getElementById('card-title').innerText = safeText('input-title', '项目名称');
+            document.getElementById('card-s').innerText = safeText('input-s', '请描述项目背景、市场环境或业务痛点...');
+            document.getElementById('card-t').innerText = safeText('input-t', '请描述你的具体目标、KPI或职责范围...');
+            document.getElementById('card-a').innerText = safeText('input-a', '请详细描述你的行动、策略、使用的工具和方法...');
+            document.getElementById('card-r').innerText = safeText('input-r', '请量化你的成果，如：效率提升50%，节省成本10万...');
         }
 
         function downloadImage() {
             const card = document.getElementById('star-card');
-            html2canvas(card, { scale: 2 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'STAR_复盘_' + (document.getElementById('input-title').value || '未命名') + '.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            });
+            const btn = document.querySelector('button');
+            
+            // 按钮给点反馈
+            const originalText = btn.innerText;
+            btn.innerText = '⏳ 生成中...';
+            btn.style.opacity = '0.7';
+
+            // 稍微延迟一下以允许UI刷新
+            setTimeout(() => {
+                html2canvas(card, { 
+                    scale: 2, // 2倍清晰度
+                    backgroundColor: "#ffffff", // 确保背景是白的（防止透明）
+                    logging: false
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    // 文件名加上时间戳防止重名
+                    const date = new Date().toISOString().slice(0,10);
+                    const title = document.getElementById('input-title').value || 'STAR复盘';
+                    link.download = `STAR_${title}_${date}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    // 恢复按钮
+                    btn.innerText = originalText;
+                    btn.style.opacity = '1';
+                });
+            }, 100);
         }
     </script>
 </body>
-
 </html>
